@@ -48,6 +48,10 @@ pub fn stretchy_buffer(comptime T: type) type {
         pub fn free(buf: *Self) void {
             buf.allocator.free(buf.elems);
         }
+
+        pub fn elements(buf: *Self) []T {
+            return buf.elems[0..buf.len];
+        }
     };
 }
 
@@ -62,9 +66,8 @@ test "push i32" {
     try buf.push(1);
     try buf.push(2);
     try buf.push(5);
-    var i: usize = 0;
-    while (i < buf.len) : (i += 1) {
-        std.debug.warn("{}\n", buf.elems[i]);
+    for (buf.elements()) |e| {
+        std.debug.warn("{}\n", e);
     }
     buf.clear();
     std.debug.assert(buf.len == 0);
@@ -89,10 +92,7 @@ test "push struct" {
     var buf = stretchy_buffer(myStruct).init(&std.heap.DirectAllocator.init().allocator);
     try buf.push(A);
     try buf.push(B);
-    for (buf.elems) |e, i| {
-        if (i >= buf.len) {
-            break;
-        }
+    for (buf.elements()) |e| {
         std.debug.warn("{}\n", e);
     }
 }
@@ -163,10 +163,9 @@ pub fn hashmap(comptime V: type) type {
                 k.* = null;
             }
 
-            var i: usize = 0;
-            while (i < map.values.len) : (i += 1) {
+            for (map.values) |v, i| {
                 if (map.keys[i]) |k| {
-                    new_map.put(k, map.values[i]) catch unreachable;
+                    new_map.put(k, v) catch unreachable;
                 }
             }
 
